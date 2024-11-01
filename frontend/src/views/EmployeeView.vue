@@ -61,31 +61,30 @@
       />
     </div>
 
-    <!-- 新增/修改员工对话框 -->
+    <!-- 新增员工对话框 -->
     <el-dialog
-      :title="dialogTitle"
-      :visible.sync="dialogVisible"
+      title="新增员工"
+      :visible.sync="addDialogVisible"
       width="25%"
-      @before-close="handleDialogClose"
+      @before-close="handleAddDialogClose"
     >
       <el-form
-        ref="userForm"
-        :model="currentForm"
-        :rules="rules"
+        ref="addUserForm"
+        :model="addForm"
+        :rules="addRules"
         label-width="80px"
         class="demo-ruleForm"
       >
         <el-form-item label="用户名" prop="username">
           <el-input
-            v-model="currentForm.username"
+            v-model="addForm.username"
             autocomplete="off"
-            :disabled="isEdit"
           ></el-input>
         </el-form-item>
         <el-form-item label="密码" prop="password">
           <el-input
             type="password"
-            v-model="currentForm.password"
+            v-model="addForm.password"
             show-password
             autocomplete="off"
           ></el-input>
@@ -93,48 +92,123 @@
         <el-form-item label="确认密码" prop="confirmPassword">
           <el-input
             type="password"
-            v-model="currentForm.confirmPassword"
+            v-model="addForm.confirmPassword"
             show-password
             autocomplete="off"
           ></el-input>
         </el-form-item>
         <el-form-item label="姓名" prop="full_name">
           <el-input
-            v-model="currentForm.full_name"
+            v-model="addForm.full_name"
             autocomplete="off"
           ></el-input>
         </el-form-item>
         <el-form-item label="性别" prop="gender">
-          <el-radio-group v-model="currentForm.gender">
+          <el-radio-group v-model="addForm.gender">
             <el-radio :label="true">男</el-radio>
             <el-radio :label="false">女</el-radio>
           </el-radio-group>
         </el-form-item>
         <el-form-item label="邮箱" prop="email">
           <el-input
-            v-model="currentForm.email"
+            v-model="addForm.email"
             autocomplete="off"
           ></el-input>
         </el-form-item>
         <el-form-item label="手机号" prop="phone">
           <el-input
-            v-model="currentForm.phone"
+            v-model="addForm.phone"
             autocomplete="off"
           ></el-input>
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button
-          v-if="!isEdit"
           plain
           type="danger"
-          @click="resetForm"
+          @click="resetAddForm"
         >清空</el-button>
         <el-button
           plain
           type="success"
-          @click="submitForm"
-        >{{ isEdit ? '保存' : '添加' }}</el-button>
+          @click="submitAddForm"
+        >添加</el-button>
+      </div>
+    </el-dialog>
+
+    <!-- 修改员工对话框 -->
+    <el-dialog
+      :title="editDialogTitle"
+      :visible.sync="editDialogVisible"
+      width="25%"
+      @before-close="handleEditDialogClose"
+    >
+      <el-form
+        ref="editUserForm"
+        :model="editForm"
+        :rules="editRules"
+        label-width="80px"
+        class="demo-ruleForm"
+      >
+        <el-form-item label="用户名" prop="username">
+          <el-input
+            v-model="editForm.username"
+            autocomplete="off"
+            :disabled="true"
+          ></el-input>
+        </el-form-item>
+        <el-form-item label="密码" prop="password">
+          <el-input
+            type="password"
+            v-model="editForm.password"
+            show-password
+            autocomplete="off"
+          ></el-input>
+        </el-form-item>
+        <el-form-item label="确认密码" prop="confirmPassword">
+          <el-input
+            type="password"
+            v-model="editForm.confirmPassword"
+            show-password
+            autocomplete="off"
+          ></el-input>
+        </el-form-item>
+        <el-form-item label="姓名" prop="full_name">
+          <el-input
+            v-model="editForm.full_name"
+            autocomplete="off"
+          ></el-input>
+        </el-form-item>
+        <el-form-item label="性别" prop="gender">
+          <el-radio-group v-model="editForm.gender">
+            <el-radio :label="true">男</el-radio>
+            <el-radio :label="false">女</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item label="邮箱" prop="email">
+          <el-input
+            v-model="editForm.email"
+            autocomplete="off"
+          ></el-input>
+        </el-form-item>
+        <el-form-item label="手机号" prop="phone">
+          <el-input
+            v-model="editForm.phone"
+            autocomplete="off"
+          ></el-input>
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button
+          plain
+          type="danger"
+          @click="resetEditForm"
+        >重置</el-button>
+        <el-button
+          plain
+          type="success"
+          @click="submitEditForm"
+        >保存</el-button>
       </div>
     </el-dialog>
   </div>
@@ -147,11 +221,9 @@ export default {
   data() {
     return {
       loading: false,
-      dialogVisible: false,
-      isEdit: false,
-      dialogTitle: '新增员工',
-      currentForm: {
-        id: null,
+      // 新增员工对话框
+      addDialogVisible: false,
+      addForm: {
         username: '',
         password: '',
         confirmPassword: '',
@@ -160,7 +232,6 @@ export default {
         email: '',
         phone: '',
       },
-      rules: {}, // 动态设置验证规则
       addRules: {
         username: [
           { required: true, message: '请输入用户名', trigger: 'blur' },
@@ -174,7 +245,7 @@ export default {
           { required: true, message: '请确认密码', trigger: 'blur' },
           {
             validator: (rule, value, callback) => {
-              if (value !== this.currentForm.password) {
+              if (value !== this.addForm.password) {
                 callback(new Error('两次输入的密码不一致'));
               } else {
                 callback();
@@ -198,6 +269,19 @@ export default {
           { pattern: /^1[3-9]\d{9}$/, message: '手机号格式不正确', trigger: 'blur' },
         ],
       },
+      // 修改员工对话框
+      editDialogVisible: false,
+      editDialogTitle: '修改员工信息',
+      editForm: {
+        id: null,
+        username: '',
+        password: '',
+        confirmPassword: '',
+        full_name: '',
+        gender: null,
+        email: '',
+        phone: '',
+      },
       editRules: {
         password: [
           { min: 6, message: '密码至少需要6个字符', trigger: 'blur' },
@@ -206,7 +290,7 @@ export default {
           {
             validator: (rule, value, callback) => {
               if (value) {
-                if (value !== this.currentForm.password) {
+                if (value !== this.editForm.password) {
                   callback(new Error('两次输入的密码不一致'));
                 } else {
                   callback();
@@ -269,13 +353,42 @@ export default {
     this.fetchTableData();
   },
   methods: {
+    // 打开新增员工对话框
     openAddDialog() {
-      this.isEdit = false;
-      this.dialogTitle = '新增员工';
-      this.dialogVisible = true;
-      this.rules = this.addRules; // 使用新增规则
-      this.currentForm = {
-        id: null,
+      this.addDialogVisible = true;
+      this.resetAddForm();
+      this.$nextTick(() => {
+        if (this.$refs.addUserForm) {
+          this.$refs.addUserForm.clearValidate();
+        }
+      });
+    },
+    // 提交新增员工表单
+    async submitAddForm() {
+      this.$refs.addUserForm.validate(async (valid) => {
+        if (valid) {
+          try {
+            await this.addEmployee();
+            this.addDialogVisible = false;
+            this.fetchTableData();
+            this.$notify.success({
+              title: '成功',
+              message: '员工添加成功！',
+            });
+          } catch (error) {
+            this.handleAddError(error);
+          }
+        }
+      });
+    },
+    // 添加员工
+    async addEmployee() {
+      await request.post('/employees', this.addForm);
+      this.resetAddForm();
+    },
+    // 重置新增员工表单
+    resetAddForm() {
+      this.addForm = {
         username: '',
         password: '',
         confirmPassword: '',
@@ -284,16 +397,46 @@ export default {
         email: '',
         phone: '',
       };
-      this.$nextTick(() => {
-        this.resetForm();
-      });
+      if (this.$refs.addUserForm) {
+        this.$refs.addUserForm.resetFields();
+      }
     },
+    // 处理新增员工错误
+    handleAddError(error) {
+      if (error.response && error.response.status === 409) {
+        const errorMsg = error.response.data.msg;
+        if (errorMsg === 'Username already exists') {
+          this.$notify.error({
+            title: '错误',
+            message: '用户名已存在，请更换用户名',
+          });
+        } else if (errorMsg === 'Email already exists') {
+          this.$notify.error({
+            title: '错误',
+            message: '邮箱已存在，请更换邮箱',
+          });
+        } else {
+          this.$notify.error({
+            title: '错误',
+            message: errorMsg || '操作失败',
+          });
+        }
+      } else {
+        this.$notify.error({
+          title: '错误',
+          message: '添加员工失败',
+        });
+      }
+    },
+    // 关闭新增员工对话框时的处理
+    handleAddDialogClose(done) {
+      this.resetAddForm();
+      done();
+    },
+    // 打开修改员工对话框
     openEditDialog(row) {
-      this.isEdit = true;
-      this.dialogTitle = '修改员工信息';
-      this.dialogVisible = true;
-      this.rules = this.editRules; // 使用修改规则
-      this.currentForm = {
+      this.editDialogVisible = true;
+      this.editForm = {
         id: row.id,
         username: row.username,
         password: '',
@@ -304,11 +447,94 @@ export default {
         phone: row.phone,
       };
       this.$nextTick(() => {
-        if (this.$refs.userForm) {
-          this.$refs.userForm.clearValidate();
+        if (this.$refs.editUserForm) {
+          this.$refs.editUserForm.clearValidate();
         }
       });
     },
+    // 提交修改员工表单
+    async submitEditForm() {
+      this.$refs.editUserForm.validate(async (valid) => {
+        if (valid) {
+          try {
+            await this.updateEmployee();
+            this.editDialogVisible = false;
+            this.fetchTableData();
+            this.$notify.success({
+              title: '成功',
+              message: '员工信息更新成功！',
+            });
+          } catch (error) {
+            this.handleEditError(error);
+          }
+        }
+      });
+    },
+    // 更新员工
+    async updateEmployee() {
+      const updateData = {};
+      Object.keys(this.editForm).forEach((key) => {
+        if (
+          this.editForm[key] !== '' &&
+          this.editForm[key] !== null &&
+          key !== 'id' &&
+          key !== 'username' // 用户名不允许修改
+        ) {
+          updateData[key] = this.editForm[key];
+        }
+      });
+      await request.put(`/employees/${this.editForm.id}`, updateData);
+      this.resetEditForm();
+    },
+    // 重置修改员工表单
+    resetEditForm() {
+      this.editForm = {
+        id: null,
+        username: '',
+        password: '',
+        confirmPassword: '',
+        full_name: '',
+        gender: null,
+        email: '',
+        phone: '',
+      };
+      if (this.$refs.editUserForm) {
+        this.$refs.editUserForm.resetFields();
+      }
+    },
+    // 处理修改员工错误
+    handleEditError(error) {
+      if (error.response && error.response.status === 409) {
+        const errorMsg = error.response.data.msg;
+        if (errorMsg === 'Username already exists') {
+          this.$notify.error({
+            title: '错误',
+            message: '用户名已存在，请更换用户名',
+          });
+        } else if (errorMsg === 'Email already exists') {
+          this.$notify.error({
+            title: '错误',
+            message: '邮箱已存在，请更换邮箱',
+          });
+        } else {
+          this.$notify.error({
+            title: '错误',
+            message: errorMsg || '操作失败',
+          });
+        }
+      } else {
+        this.$notify.error({
+          title: '错误',
+          message: '更新员工失败',
+        });
+      }
+    },
+    // 关闭修改员工对话框时的处理
+    handleEditDialogClose(done) {
+      this.resetEditForm();
+      done();
+    },
+    // 获取员工表格数据
     async fetchTableData() {
       this.loading = true;
       try {
@@ -326,78 +552,12 @@ export default {
         this.loading = false;
       }
     },
+    // 处理分页大小变化
     handleSizeChange(newSize) {
       this.pageSize = newSize;
       this.fetchTableData();
     },
-    async submitForm() {
-      this.$refs.userForm.validate(async (valid) => {
-        if (valid) {
-          try {
-            if (this.isEdit) {
-              await this.updateEmployee();
-            } else {
-              await this.addEmployee();
-            }
-            this.dialogVisible = false;
-            this.fetchTableData();
-            this.$notify.success({
-              title: '成功',
-              message: `员工${this.isEdit ? '更新' : '添加'}成功！`,
-            });
-          } catch (error) {
-            // 错误处理逻辑
-            if (error.response && error.response.status === 409) {
-              const errorMsg = error.response.data.msg;
-              if (errorMsg === 'Username already exists') {
-                this.$notify.error({
-                  title: '错误',
-                  message: '用户名已存在，请更换用户名',
-                });
-              } else if (errorMsg === 'Email already exists') {
-                this.$notify.error({
-                  title: '错误',
-                  message: '邮箱已存在，请更换邮箱',
-                });
-              } else {
-                this.$notify.error({
-                  title: '错误',
-                  message: errorMsg || '操作失败',
-                });
-              }
-            } else {
-              this.$notify.error({
-                title: '错误',
-                message: `${this.isEdit ? '更新' : '添加'}员工失败`,
-              });
-            }
-          }
-        }
-      });
-    },
-    async addEmployee() {
-      await request.post('/employees', this.currentForm);
-      this.resetForm();
-    },
-    async updateEmployee() {
-      const updateData = {};
-      Object.keys(this.currentForm).forEach((key) => {
-        if (
-          this.currentForm[key] !== '' &&
-          this.currentForm[key] !== null &&
-          key !== 'id' &&
-          key !== 'username' // 用户名不允许修改
-        ) {
-          updateData[key] = this.currentForm[key];
-        }
-      });
-      await request.put(`/employees/${this.currentForm.id}`, updateData);
-    },
-    resetForm() {
-      if (this.$refs.userForm) {
-        this.$refs.userForm.resetFields();
-      }
-    },
+    // 切换员工账号状态
     async confirmStatusChange(row) {
       const newStatus = row.is_active;
       try {
@@ -416,13 +576,9 @@ export default {
         });
       }
     },
+    // 格式化性别显示
     formatGender(value) {
       return value ? '男' : '女';
-    },
-    handleDialogClose(done) {
-      this.resetForm(); // 重置表单
-      this.dialogVisible = false; // 关闭对话框
-      done(); // 完成关闭操作
     },
   },
 };
